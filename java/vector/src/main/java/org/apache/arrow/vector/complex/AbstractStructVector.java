@@ -272,7 +272,7 @@ public abstract class AbstractStructVector extends AbstractContainerVector {
    * @param name   field name
    * @param vector vector to be inserted
    */
-  protected void putVector(String name, FieldVector vector) {
+  public void putVector(String name, FieldVector vector) {
     switch (conflictPolicy) {
       case CONFLICT_APPEND:
         put(name, vector, false);

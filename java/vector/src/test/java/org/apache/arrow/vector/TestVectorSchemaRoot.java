@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -313,6 +314,35 @@ public class TestVectorSchemaRoot {
 
       // no schema update this time.
       assertFalse(schemaRoot.syncSchema());
+    }
+  }
+
+  @Test
+  public void testTransformation() {
+    try (final IntVector intVector1 = new IntVector("intVector1", allocator);
+         final IntVector intVector2 = new IntVector("intVector2", allocator);
+         final IntVector intVector3 = new IntVector("intVector3", allocator);) {
+      intVector1.setValueCount(5);
+      intVector2.setValueCount(5);
+      intVector3.setValueCount(5);
+      for (int i = 0; i < 5; i++) {
+        intVector1.set(i, i);
+        intVector2.set(i, i+1);
+        intVector3.set(i, i+2);
+      }
+      VectorSchemaRoot original = new VectorSchemaRoot(Arrays.asList(intVector1, intVector2, intVector3));
+      assertEquals(3, original.getFieldVectors().size());
+
+      StructVector sv = VectorSchemaRoot.ToStructVector(original, allocator);
+      VectorSchemaRoot new_vsr = VectorSchemaRoot.FromStructVector(sv);
+
+      // Check that result is identical to original
+      for (FieldVector v : original.getFieldVectors()) {
+        FieldVector v2 = new_vsr.getVector(v.getField());
+        for (int i = 0; i < v.getValueCount(); i++) {
+          assertEquals(v.getObject(i), v2.getObject(i));
+        }
+      }
     }
   }
 }

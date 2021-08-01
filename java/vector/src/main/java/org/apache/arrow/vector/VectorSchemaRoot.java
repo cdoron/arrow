@@ -33,6 +33,7 @@ import org.apache.arrow.vector.compare.Range;
 import org.apache.arrow.vector.compare.VectorEqualsVisitor;
 import org.apache.arrow.vector.compare.VectorValueEqualizer;
 import org.apache.arrow.vector.compare.util.ValueEpsilonEqualizers;
+import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.TransferPair;
@@ -136,6 +137,20 @@ public class VectorSchemaRoot implements AutoCloseable {
   /** Constructs a new instance from vectors. */
   public static VectorSchemaRoot of(FieldVector... vectors) {
     return new VectorSchemaRoot(Arrays.stream(vectors).collect(Collectors.toList()));
+  }
+
+  public static StructVector ToStructVector(VectorSchemaRoot original, BufferAllocator allocator) {
+    List<FieldVector> vectors = original.getFieldVectors();
+    StructVector s = StructVector.empty("", allocator);
+    for (FieldVector vector : vectors) {
+      s.putVector(vector.getName(), vector);
+    }
+    return s;
+  }
+
+  public static VectorSchemaRoot FromStructVector(StructVector sv) {
+    List<FieldVector> children = sv.getChildrenFromFields();
+    return new VectorSchemaRoot(children);
   }
 
   /**
